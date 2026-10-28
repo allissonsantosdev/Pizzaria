@@ -1,8 +1,9 @@
 from dependencies import pegar_sessao, verificar_token
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from schemas import PedidoSchema, ItemPedidoSchema
+from schemas import PedidoSchema, ItemPedidoSchema, ResponsePedidoSchema
 from models import Pedido, Usuario, ItemPedido
+from typing import List
 
 order_router = APIRouter(prefix="/pedidos", tags=["Pedidos"], dependencies=[Depends(verificar_token)])
 
@@ -113,12 +114,9 @@ async def visualizar_pedido(id_pedido: int, session: Session = Depends(pegar_ses
     return {"mensagem": "Pedido visualizado com sucesso", "pedido": pedido}
 
 
-#Visualizar todos os pedidos de um usuário
-@order_router.get("/listar/{id_usuario}")
-async def listar_pedidos_usuario(id_usuario: int, session: Session = Depends(pegar_sessao), usuario: Usuario = Depends(verificar_token)):
-    pedidos = session.query(Pedido).filter(Pedido.usuario == id_usuario).all()
-    if not pedidos:
-        raise HTTPException(status_code=404, detail="Nenhum pedido encontrado")
-    if not usuario.admin and usuario.id != id_usuario:
-        raise HTTPException(status_code=401, detail="Você não tem permissão para visualizar estes pedidos")
-    return {"mensagem": "Lista de pedidos do usuário", "pedidos": pedidos}
+# Visualizar todos os pedidos do usuário autenticado
+@order_router.get("/listar/pedidos-usuario", response_model=list[ResponsePedidoSchema])
+async def listar_pedidos_usuario(session: Session = Depends(pegar_sessao), usuario: Usuario = Depends(verificar_token)):
+    pedidos = session.query(Pedido).filter(Pedido.usuario == usuario.id).all()
+    return pedidos
+

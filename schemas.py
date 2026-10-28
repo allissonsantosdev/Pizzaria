@@ -1,5 +1,5 @@
-from pydantic import BaseModel
-from typing import Optional
+from pydantic import BaseModel, field_validator
+from typing import Optional, List
 
 class UsuarioSchema(BaseModel):
     nome: str
@@ -42,3 +42,16 @@ class ItemPedidoSchema(BaseModel):
     
     class Config:
         from_attributes = True
+
+class ResponsePedidoSchema(BaseModel):
+    id: int
+    status: str 
+    preco: float
+    itens: List[ItemPedidoSchema]
+
+    @field_validator("status", mode="before")
+    def converter_status(cls, v):
+        return v.value if hasattr(v, "value") else str(v)
+
+    class Config:
+        from_attributes = True
